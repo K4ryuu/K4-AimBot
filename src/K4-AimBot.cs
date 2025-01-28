@@ -29,6 +29,9 @@ public sealed class PluginConfig : BasePluginConfig
     [JsonPropertyName("snap-aim-bone-target")]
     public int SnapAimBoneTarget { get; set; } = 6;
 
+    [JsonPropertyName("snap-aim-no-recoil")]
+    public bool SnapAimNoRecoil { get; set; } = true;
+
     // Silent aim settings
     [JsonPropertyName("silent-aim-fov")]
     public float SilentAimFov { get; set; } = 60.0f;
@@ -47,6 +50,9 @@ public sealed class PluginConfig : BasePluginConfig
 
     [JsonPropertyName("silent-aim-bone-target")]
     public int SilentAimBoneTarget { get; set; } = 0;
+
+    [JsonPropertyName("silent-aim-no-recoil")]
+    public bool SilentAimNoRecoil { get; set; } = false;
 
     // Target selection weights
     [JsonPropertyName("target-fov-weight")]
@@ -76,14 +82,14 @@ public sealed class PluginConfig : BasePluginConfig
     public float SmoothAimCombinedFactor { get; set; } = 0.75f;
 
     [JsonPropertyName("ConfigVersion")]
-    public override int Version { get; set; } = 2;
+    public override int Version { get; set; } = 3;
 }
 
 [MinimumApiVersion(304)]
 public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 {
-    public override string ModuleName => "CS2 Server Aimbot";
-    public override string ModuleVersion => "1.1.1";
+    public override string ModuleName => "CS2 Server AimBot";
+    public override string ModuleVersion => "1.1.2";
     public override string ModuleAuthor => "K4ryuu @ KitsuneLab";
     public override string ModuleDescription => "Server side AimBot for Counter-Strike: 2";
 
@@ -103,6 +109,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
     {
         public bool Enabled { get; set; }
         public bool SmoothAim { get; set; }
+        public bool NoRecoil { get; set; }
         public float SmoothSpeed { get; set; }
         public QAngle? LastTargetAngle { get; set; }
         public CCSPlayerController? LastTarget { get; set; }
@@ -113,7 +120,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
     public override void Load(bool hotReload)
     {
-        AddCommand("css_aim", "Toggle aimbot", CommandUsage);
+        AddCommand("css_aim", "Toggle aimbot", CommandAim);
         AddCommand("css_silentaim", "Toggle smooth aim", CommandSmoothAim);
 
         RegisterListener<Listeners.OnTick>(OnTick);
@@ -178,6 +185,20 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 
             if (state.Enabled)
             {
+                if (state.NoRecoil && player.PlayerPawn.Value?.IsValid == true)
+                {
+                    player.PlayerPawn.Value.AimPunchTickBase = 0;
+                    player.PlayerPawn.Value.AimPunchTickFraction = 0;
+
+                    player.PlayerPawn.Value.AimPunchAngle.X = 0;
+                    player.PlayerPawn.Value.AimPunchAngle.Y = 0;
+                    player.PlayerPawn.Value.AimPunchAngle.Z = 0;
+
+                    player.PlayerPawn.Value.AimPunchAngleVel.X = 0;
+                    player.PlayerPawn.Value.AimPunchAngleVel.Y = 0;
+                    player.PlayerPawn.Value.AimPunchAngleVel.Z = 0;
+                }
+
                 var maxDistance = state.SmoothAim ? Config.SilentAimDistance : Config.MaxDistance;
                 var maxFov = state.SmoothAim ? Config.SilentAimFov : Config.FieldOfView;
 
@@ -365,21 +386,21 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
         if (!ValidateCommand(player))
             return;
 
-        SetAimState(player!, true);
+        SetAimState(player!, true, Config.SilentAimNoRecoil);
     }
 
     private bool ValidateCommand(CCSPlayerController? player)
         => player != null && player.IsValid && AdminManager.PlayerHasPermissions(player, Config.Permission);
 
-    public void CommandUsage(CCSPlayerController? player, CommandInfo command)
+    public void CommandAim(CCSPlayerController? player, CommandInfo command)
     {
         if (!ValidateCommand(player))
             return;
 
-        SetAimState(player!, false);
+        SetAimState(player!, false, Config.SnapAimNoRecoil);
     }
 
-    public void SetAimState(CCSPlayerController player, bool smoothAim)
+    public void SetAimState(CCSPlayerController player, bool smoothAim, bool noRecoil)
     {
         if (AimbotStates.TryGetValue(player, out var state))
         {
@@ -392,8 +413,12 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
                 state.SmoothAim = smoothAim;
             }
 
-            player!.PrintToCenterAlert($"AIMBOT: {(state.Enabled ? "On" : "Off")}\nMODE: {(state.SmoothAim ? "Silent" : "Snap")}");
+            state.NoRecoil = noRecoil;
+
+            player!.PrintToCenterAlert($"AIMBOT: {(state.Enabled ? "On" : "Off")}\nMODE: {(state.SmoothAim ? "Silent" : "Snap")}\nNORECOIL: {(state.NoRecoil ? "On" : "Off")}");
+
             player.ReplicateConVar("weapon_accuracy_nospread", state.Enabled ? "1" : "0");
+            player.ReplicateConVar("weapon_air_spread_scale", state.Enabled ? "0" : "1");
         }
         else
         {
@@ -401,14 +426,17 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
             {
                 Enabled = true,
                 SmoothAim = smoothAim,
+                NoRecoil = noRecoil,
                 SmoothSpeed = Config.SilentAimSpeed,
                 LastTargetTime = 0
             };
 
             AimbotStates.Add(player, newState);
 
-            player!.PrintToCenterAlert($"AIMBOT: {(newState.Enabled ? "On" : "Off")}\nMODE: {(newState.SmoothAim ? "Silent" : "Snap")}");
+            player!.PrintToCenterAlert($"AIMBOT: {(newState.Enabled ? "On" : "Off")}\nMODE: {(newState.SmoothAim ? "Silent" : "Snap")}\nNORECOIL: {(newState.NoRecoil ? "On" : "Off")}");
+
             player.ReplicateConVar("weapon_accuracy_nospread", "1");
+            player.ReplicateConVar("weapon_air_spread_scale", "0");
         }
     }
 

@@ -1,3 +1,8 @@
+-- 2025.01.28 - v1.1.2
+
+- feat: Added air spread block while aiming
+- feat: Added optional norecoil while aiming
+
 -- 2025.01.28 - v1.1.1
 
 - feat: Added ReplicateConVar for 100% accuracy for aim users while running or jumping
