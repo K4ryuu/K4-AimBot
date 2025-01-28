@@ -48,9 +48,9 @@ css_silentaim - Toggles silent aim mode - Drags the aim with the given speed to 
 Uses the default settings, but you can override and fine-tune them as you want...
 
 <div style="justify-content: space-between;">
-  <img src="https://i.imgur.com/YUtgPKH.gif" alt="Silent Aim" width="100%">
-  <img src="https://i.imgur.com/qGcIO5w.gif" alt="Snap Aim" width="100%">
-  <img src="https://i.imgur.com/qGcIO5w.gif" alt="Snap Aim" width="100%">
+  <img src="https://github.com/K4ryuu/K4-AimBot/blob/dev/showcase/aim-snap.gif?raw=true" alt="Silent Aim" width="480px">
+  <img src="https://github.com/K4ryuu/K4-AimBot/blob/dev/showcase/aim-silent.gif?raw=true" alt="Silent Aim" width="480px">
+  <img src="https://github.com/K4ryuu/K4-AimBot/blob/dev/showcase/aim-config.png?raw=true" alt="Plugin Config" width="480px">
 </div>
 
 ### Dependencies
