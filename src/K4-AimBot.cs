@@ -79,11 +79,11 @@ public sealed class PluginConfig : BasePluginConfig
     public override int Version { get; set; } = 2;
 }
 
-[MinimumApiVersion(300)]
+[MinimumApiVersion(304)]
 public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
 {
     public override string ModuleName => "CS2 Server Aimbot";
-    public override string ModuleVersion => "1.1.0";
+    public override string ModuleVersion => "1.1.1";
     public override string ModuleAuthor => "K4ryuu @ KitsuneLab";
     public override string ModuleDescription => "Server side AimBot for Counter-Strike: 2";
 
@@ -393,6 +393,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
             }
 
             player!.PrintToCenterAlert($"AIMBOT: {(state.Enabled ? "On" : "Off")}\nMODE: {(state.SmoothAim ? "Silent" : "Snap")}");
+            player.ReplicateConVar("weapon_accuracy_nospread", state.Enabled ? "1" : "0");
         }
         else
         {
@@ -407,6 +408,7 @@ public partial class Plugin : BasePlugin, IPluginConfig<PluginConfig>
             AimbotStates.Add(player, newState);
 
             player!.PrintToCenterAlert($"AIMBOT: {(newState.Enabled ? "On" : "Off")}\nMODE: {(newState.SmoothAim ? "Silent" : "Snap")}");
+            player.ReplicateConVar("weapon_accuracy_nospread", "1");
         }
     }
 
